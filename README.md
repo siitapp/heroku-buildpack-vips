@@ -81,7 +81,7 @@ The order is important as the `apt` buildpack and its dependencies must be insta
 [This](./build.sh) is the script used to build vips using docker.
 
 ```sh
-VIPS_VERSION=x.y.z ./build.sh
+HEIF_VERSION=1.16.1 VIPS_VERSION=8.14.2 ./build.sh
 ```
 
 After building a tar file, it will be copied to the `build` directory. Then you should commit this changes to git.

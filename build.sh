@@ -10,14 +10,15 @@ rm -rf ./build/*.tar.gz
 mkdir -p ./build/configurations
 rm -rf ./build/configurations/*.log
 
-STACK_VERSIONS=(18 20 22)
+STACK_VERSIONS=(22)
 
 for stack_version in "${STACK_VERSIONS[@]}"; do
   image_name=libvips-heroku-$stack_version:$VIPS_VERSION
 
   docker build \
     --build-arg VIPS_VERSION=${VIPS_VERSION} \
-    --build-arg STACK_VERSION=${stack_version}\
+    --build-arg STACK_VERSION=${stack_version} \
+    --build-arg HEIF_VERSION=${HEIF_VERSION} \
     -t $image_name \
     container
 

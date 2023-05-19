@@ -7,6 +7,8 @@ ENV DEBIAN_FRONTEND noninteractive
 # pre-baked tarballs
 RUN apt-get update && apt-get install -y \
   build-essential \
+  python3-pip \
+  ninja-build \
   autoconf \
   automake \
   cmake \
@@ -17,6 +19,9 @@ RUN apt-get update && apt-get install -y \
   wget \
   git \
   pkg-config
+
+# libvips uses meson to build
+RUN pip3 install meson
 
 # heroku buildpacks include some libraries, like tiff and jpeg, as part of the
 # run-time platform, and we want to use those libs if we can
@@ -98,24 +103,25 @@ ARG HEIF_URL=https://github.com/strukturag/libheif/releases/download
 RUN wget ${HEIF_URL}/v${HEIF_VERSION}/libheif-${HEIF_VERSION}.tar.gz \
   && tar xf libheif-${HEIF_VERSION}.tar.gz \
   && cd libheif-${HEIF_VERSION} \
-  && ./configure --prefix=$VIPS_PREFIX \
-  && make V=0 \
-  && make install
+  && mkdir build && cd build \
+  && cmake --preset=release ..
 
 ARG VIPS_VERSION=8.10.5
 ARG VIPS_URL=https://github.com/libvips/libvips/releases/download
 
-RUN wget ${VIPS_URL}/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz \
-  && tar xzf vips-${VIPS_VERSION}.tar.gz \
+RUN wget ${VIPS_URL}/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.xz \
+  && tar -xf vips-${VIPS_VERSION}.tar.xz \
   && cd vips-${VIPS_VERSION} \
-  && ./configure --prefix=$VIPS_PREFIX \
-  && make V=0 \
-  && make install
+  && meson setup build --prefix=$VIPS_PREFIX --buildtype=release -Dintrospection=false \
+  && cd build \
+  && meson compile \
+  && meson test \
+  && meson install
 
 # clean the build area ready for packaging
 RUN cd $VIPS_PREFIX \
-  && rm bin/gif* bin/orc* bin/gsf* bin/batch_* bin/vips-* \
-  && rm bin/vipsprofile bin/light_correct bin/shrink_width \
+  && rm -rf bin/gif* bin/orc* bin/gsf* bin/batch_* bin/vips-* \
+  && rm -rf bin/vipsprofile bin/light_correct bin/shrink_width \
   && strip lib/*.a lib/lib*.so* \
   && rm -rf share/gtk-doc \
   && rm -rf share/man \
